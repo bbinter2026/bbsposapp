@@ -1,0 +1,1998 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOZEDUMAR - POS & Gestão de Vendas</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        moze: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                            dark: '#0f172a'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Custom CSS for Printable Reports & Fine Details -->
+    <style>
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printable-area, #printable-area * {
+                visibility: visible;
+            }
+            #printable-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white;
+                color: black;
+                padding: 20px;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col antialiased">
+
+    <!-- Navigation Bar -->
+    <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-40 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Brand Title -->
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('pos')">
+                    <div class="bg-emerald-500 text-slate-950 p-2.5 rounded-xl font-black text-xl shadow-lg shadow-emerald-500/20">
+                        <i class="fa-solid me-1 fa-fish-fins"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-extrabold text-lg tracking-tight text-white leading-tight">MOZEDUMAR</h1>
+                        <p class="text-[10px] text-emerald-400 font-medium tracking-wider uppercase">Restauração & Entrega ao Domicílio</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <nav class="hidden md:flex space-x-2">
+                    <button onclick="switchTab('pos')" id="nav-pos" class="px-4 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-2 bg-emerald-600 text-white shadow">
+                        <i class="fa-solid fa-utensils"></i> Mesas & Salão
+                    </button>
+                    <button onclick="switchTab('delivery')" id="nav-delivery" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-700 transition flex items-center gap-2">
+                        <i class="fa-solid fa-motorcycle"></i> Pedidos & Entregas
+                    </button>
+                    <button onclick="switchTab('catalog')" id="nav-catalog" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-700 transition flex items-center gap-2">
+                        <i class="fa-solid fa-book-open"></i> Cardápio
+                    </button>
+                    <button onclick="switchTab('reports')" id="nav-reports" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-700 transition flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line"></i> Relatórios Avançados
+                    </button>
+                </nav>
+
+                <!-- Active User Status -->
+                <div class="flex items-center space-x-3">
+                    <div class="bg-slate-700/80 px-3 py-1.5 rounded-xl border border-slate-600 flex items-center gap-2">
+                        <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
+                        <span class="text-xs text-slate-400 font-medium">Operador:</span>
+                        <select id="user-selector" onchange="changeCurrentUser(this.value)" class="bg-transparent text-xs font-bold text-emerald-300 focus:outline-none cursor-pointer">
+                            <option value="admin">admin (Gerente)</option>
+                            <option value="edu" selected>edu (Garçom)</option>
+                            <option value="moises">moises (Garçom)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Navigation Menu -->
+        <div class="md:hidden flex border-t border-slate-700/60 overflow-x-auto p-2 gap-2 bg-slate-800/90">
+            <button onclick="switchTab('pos')" class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap bg-emerald-600 text-white">Mesas</button>
+            <button onclick="switchTab('delivery')" class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap bg-slate-700 text-slate-300">Entregas</button>
+            <button onclick="switchTab('catalog')" class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap bg-slate-700 text-slate-300">Cardápio</button>
+            <button onclick="switchTab('reports')" class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap bg-slate-700 text-slate-300">Relatórios</button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+
+        <!-- ================= SECTION 1: POS / MESAS ================= -->
+        <section id="section-pos" class="space-y-6">
+            <!-- Header bar with Table filter status -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-800/50 p-4 rounded-2xl border border-slate-700/60">
+                <div>
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-table-cells text-emerald-400"></i> Gestão do Salão (12 Mesas)
+                    </h2>
+                    <p class="text-xs text-slate-400">Selecione uma mesa para abrir comanda, adicionar produtos em tempo real e fechar conta.</p>
+                </div>
+                <div class="flex items-center gap-4 text-xs">
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> Livre</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-rose-500"></span> Ocupada</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-500"></span> Reservada</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-cyan-500"></span> Conta Pedida</span>
+                </div>
+            </div>
+
+            <!-- 12 Tables Grid -->
+            <div id="tables-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <!-- Javascript will inject table cards here -->
+            </div>
+        </section>
+
+
+        <!-- ================= SECTION 2: DELIVERY & TAKEAWAY ================= -->
+        <section id="section-delivery" class="hidden space-y-6">
+            <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/60 flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-motorcycle text-emerald-400"></i> Pedidos de Entrega ao Domicílio & Takeaway
+                    </h2>
+                    <p class="text-xs text-slate-400">Gerencie entregas na Praia do Bilene e pedidos para viagem.</p>
+                </div>
+                <button onclick="createNewDeliveryModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-emerald-600/20">
+                    <i class="fa-solid fa-plus"></i> Novo Pedido de Entrega
+                </button>
+            </div>
+            <div id="delivery-orders-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Delivery orders loaded dynamically -->
+            </div>
+        </section>
+
+
+        <!-- ================= SECTION 3: CARDÁPIO (MENU CATALOG) ================= -->
+        <section id="section-catalog" class="hidden space-y-6">
+            <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-utensils text-emerald-400"></i> Catálogo de Produtos do Restaurante
+                    </h2>
+                    <p class="text-xs text-slate-400">Preços e categorias oficiais do MOZEDUMAR.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="text" id="catalog-search" oninput="renderCatalogTable()" placeholder="Pesquisar catálogo..." class="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500">
+                    <button onclick="addNewProductModal()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-plus"></i> Criar Produto
+                    </button>
+                </div>
+            </div>
+            
+            <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs text-slate-300">
+                        <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-700">
+                            <tr>
+                                <th class="p-3">ID</th>
+                                <th class="p-3">Produto</th>
+                                <th class="p-3">Categoria</th>
+                                <th class="p-3">Preço Unitário</th>
+                                <th class="p-3 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="catalog-table-body" class="divide-y divide-slate-700/50">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ================= SECTION 4: ADVANCED REPORTS MODULE ================= -->
+        <section id="section-reports" class="hidden space-y-6">
+            <!-- Header bar -->
+            <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700 shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-black text-white flex items-center gap-3">
+                        <i class="fa-solid fa-chart-pie text-emerald-400"></i> Relatórios Profissionais de Vendas
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Análise histórica imutável e auditoria detalhada por operador, produto, mesa e método de pagamento.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="printCurrentReport()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-emerald-400 border border-slate-600 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow">
+                        <i class="fa-solid fa-print"></i> 🖨 IMPRIMIR
+                    </button>
+                    <button onclick="exportReportJSON()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-cyan-400 border border-slate-600 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow">
+                        <i class="fa-solid fa-code"></i> JSON
+                    </button>
+                    <button onclick="exportReportCSV()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow">
+                        <i class="fa-solid fa-file-excel"></i> CSV
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dashboard KPI Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-3">
+                <div class="bg-slate-800/90 p-3 rounded-xl border border-slate-700 shadow-md">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Vendas Hoje</p>
+                    <h3 id="kpi-vendas-hoje" class="text-base font-black text-emerald-400 mt-1">0 MT</h3>
+                </div>
+                <div class="bg-slate-800/90 p-3 rounded-xl border border-slate-700 shadow-md">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Nº de Vendas</p>
+                    <h3 id="kpi-num-vendas" class="text-base font-black text-white mt-1">0</h3>
+                </div>
+                <div class="bg-slate-800/90 p-3 rounded-xl border border-slate-700 shadow-md">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Itens Vendidos</p>
+                    <h3 id="kpi-itens-vendidos" class="text-base font-black text-white mt-1">0</h3>
+                </div>
+                <div class="bg-slate-800/90 p-3 rounded-xl border border-slate-700 shadow-md">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Ticket Médio</p>
+                    <h3 id="kpi-ticket-medio" class="text-base font-black text-amber-400 mt-1">0 MT</h3>
+                </div>
+                <div class="bg-slate-800/90 p-3 rounded-xl border border-slate-700 shadow-md">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Dinheiro</p>
+                    <h3 id="kpi-dinheiro" class="text-base font-black text-emerald-300 mt-1">0 MT</h3>
+                </div>
+                <div class="bg-slate-800/90 p-3 rounded-xl border border-slate-700 shadow-md">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Cartão</p>
+                    <h3 id="kpi-cartao" class="text-base font-black text-blue-400 mt-1">0 MT</h3>
+                </div>
+                <div class="bg-slate-800/90 p-3 rounded-xl border border-slate-700 shadow-md">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">M-Pesa</p>
+                    <h3 id="kpi-mpesa" class="text-base font-black text-rose-400 mt-1">0 MT</h3>
+                </div>
+                <div class="bg-slate-800/90 p-3 rounded-xl border border-slate-700 shadow-md">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">e-Mola</p>
+                    <h3 id="kpi-emola" class="text-base font-black text-yellow-400 mt-1">0 MT</h3>
+                </div>
+                <div class="bg-slate-800/90 p-3 rounded-xl border border-slate-700 shadow-md">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Fiado</p>
+                    <h3 id="kpi-fiado" class="text-base font-black text-purple-400 mt-1">0 MT</h3>
+                </div>
+            </div>
+
+            <!-- Combinable Filters Panel -->
+            <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-lg space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+                    <h3 class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-filter"></i> Filtros Combináveis em Tempo Real
+                    </h3>
+                    <button onclick="clearReportFilters()" class="text-xs text-rose-400 hover:underline flex items-center gap-1">
+                        <i class="fa-solid fa-rotate-left"></i> Limpar Filtros
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 text-xs">
+                    <!-- Período Preset -->
+                    <div>
+                        <label class="block text-slate-400 mb-1 font-semibold">Período</label>
+                        <select id="rpt-period" onchange="handlePeriodPresetChange()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-white focus:outline-none focus:border-emerald-500">
+                            <option value="today" selected>Hoje (14/09/2026)</option>
+                            <option value="yesterday">Ontem</option>
+                            <option value="last7">Últimos 7 dias</option>
+                            <option value="last30">Últimos 30 dias</option>
+                            <option value="thisMonth">Este mês</option>
+                            <option value="lastMonth">Mês anterior</option>
+                            <option value="custom">Personalizado</option>
+                        </select>
+                    </div>
+
+                    <!-- Utilizador Filter -->
+                    <div>
+                        <label class="block text-slate-400 mb-1 font-semibold">👤 Utilizador</label>
+                        <select id="rpt-user" onchange="applyReportFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-white focus:outline-none focus:border-emerald-500">
+                            <option value="all">Todos os Operadores</option>
+                            <option value="admin">admin</option>
+                            <option value="edu">edu</option>
+                            <option value="moises">moises</option>
+                        </select>
+                    </div>
+
+                    <!-- Categoria Filter -->
+                    <div>
+                        <label class="block text-slate-400 mb-1 font-semibold">Categoria</label>
+                        <select id="rpt-category" onchange="applyReportFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-white focus:outline-none focus:border-emerald-500">
+                            <option value="all">Todas as Categorias</option>
+                            <!-- JS populates categories -->
+                        </select>
+                    </div>
+
+                    <!-- Produto Filter -->
+                    <div>
+                        <label class="block text-slate-400 mb-1 font-semibold">Produto</label>
+                        <input type="text" id="rpt-product" oninput="applyReportFilters()" placeholder="Ex: T-Bone, Coca..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+
+                    <!-- Mesa Filter -->
+                    <div>
+                        <label class="block text-slate-400 mb-1 font-semibold">Mesa</label>
+                        <select id="rpt-table" onchange="applyReportFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-white focus:outline-none focus:border-emerald-500">
+                            <option value="all">Todas as Mesas</option>
+                            <option value="1">Mesa 1</option>
+                            <option value="2">Mesa 2</option>
+                            <option value="3">Mesa 3</option>
+                            <option value="4">Mesa 4</option>
+                            <option value="5">Mesa 5</option>
+                            <option value="6">Mesa 6</option>
+                            <option value="7">Mesa 7</option>
+                            <option value="8">Mesa 8</option>
+                            <option value="9">Mesa 9</option>
+                            <option value="10">Mesa 10</option>
+                            <option value="11">Mesa 11</option>
+                            <option value="12">Mesa 12</option>
+                            <option value="delivery">Entrega / Takeaway</option>
+                        </select>
+                    </div>
+
+                    <!-- Pagamento Filter -->
+                    <div>
+                        <label class="block text-slate-400 mb-1 font-semibold">Pagamento</label>
+                        <select id="rpt-payment" onchange="applyReportFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-white focus:outline-none focus:border-emerald-500">
+                            <option value="all">Todos os Métodos</option>
+                            <option value="Dinheiro">Dinheiro</option>
+                            <option value="Cartão">Cartão</option>
+                            <option value="M-Pesa">M-Pesa</option>
+                            <option value="e-Mola">e-Mola</option>
+                            <option value="Fiado">Fiado</option>
+                        </select>
+                    </div>
+
+                    <!-- Cliente Filter -->
+                    <div>
+                        <label class="block text-slate-400 mb-1 font-semibold">Cliente</label>
+                        <input type="text" id="rpt-customer" oninput="applyReportFilters()" placeholder="Nome do cliente..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <!-- Custom Date & Time Controls (Shown when custom or needed) -->
+                <div id="custom-date-container" class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-slate-700/40 text-xs hidden">
+                    <div>
+                        <label class="block text-slate-400 mb-1">Data Inicial</label>
+                        <input type="date" id="rpt-start-date" onchange="applyReportFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Hora Inicial</label>
+                        <input type="time" id="rpt-start-time" onchange="applyReportFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Data Final</label>
+                        <input type="date" id="rpt-end-date" onchange="applyReportFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Hora Final</label>
+                        <input type="time" id="rpt-end-time" onchange="applyReportFilters()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-white">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Sub-Tabs Navigation -->
+            <div class="flex border-b border-slate-700 overflow-x-auto gap-2 pb-1 text-xs">
+                <button onclick="switchReportTab('sales_list')" id="rpt-tab-sales_list" class="px-4 py-2 font-bold rounded-t-xl bg-emerald-600 text-white border-b-2 border-emerald-400 whitespace-nowrap">
+                    <i class="fa-solid fa-list-check me-1"></i> Lista de Vendas
+                </button>
+                <button onclick="switchReportTab('by_user')" id="rpt-tab-by_user" class="px-4 py-2 font-bold rounded-t-xl bg-slate-800 text-slate-300 hover:text-white whitespace-nowrap">
+                    <i class="fa-solid fa-user me-1"></i> Vendas por Utilizador
+                </button>
+                <button onclick="switchReportTab('by_product')" id="rpt-tab-by_product" class="px-4 py-2 font-bold rounded-t-xl bg-slate-800 text-slate-300 hover:text-white whitespace-nowrap">
+                    <i class="fa-solid fa-burger me-1"></i> Produtos Vendidos
+                </button>
+                <button onclick="switchReportTab('by_table')" id="rpt-tab-by_table" class="px-4 py-2 font-bold rounded-t-xl bg-slate-800 text-slate-300 hover:text-white whitespace-nowrap">
+                    <i class="fa-solid fa-chair me-1"></i> Por Mesa
+                </button>
+                <button onclick="switchReportTab('by_payment')" id="rpt-tab-by_payment" class="px-4 py-2 font-bold rounded-t-xl bg-slate-800 text-slate-300 hover:text-white whitespace-nowrap">
+                    <i class="fa-solid fa-wallet me-1"></i> Pagamentos
+                </button>
+                <button onclick="switchReportTab('matrix_user_day')" id="rpt-tab-matrix_user_day" class="px-4 py-2 font-bold rounded-t-xl bg-slate-800 text-slate-300 hover:text-white whitespace-nowrap">
+                    <i class="fa-solid fa-table-cells me-1"></i> Dia × Utilizador
+                </button>
+                <button onclick="switchReportTab('user_product')" id="rpt-tab-user_product" class="px-4 py-2 font-bold rounded-t-xl bg-slate-800 text-slate-300 hover:text-white whitespace-nowrap">
+                    <i class="fa-solid fa-chart-user me-1"></i> Utilizador + Produto
+                </button>
+                <button onclick="switchReportTab('granular_log')" id="rpt-tab-granular_log" class="px-4 py-2 font-bold rounded-t-xl bg-slate-800 text-slate-300 hover:text-white whitespace-nowrap">
+                    <i class="fa-solid fa-magnifying-glass text-emerald-400 me-1"></i> Utilizador + Data + Item
+                </button>
+            </div>
+
+            <!-- Report Content Panels -->
+            <div id="report-tab-content" class="bg-slate-800 rounded-2xl border border-slate-700 p-4 min-h-[400px]">
+                <!-- Dynamic report views injected here -->
+            </div>
+        </section>
+
+    </main>
+
+
+    <!-- ================= MODAL: COMANDA / ABRIR MESA (With Live Search + Categories) ================= -->
+    <div id="comanda-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-6xl max-h-[95vh] flex flex-col overflow-hidden shadow-2xl">
+            <!-- Modal Header -->
+            <div class="bg-slate-800 px-6 py-4 border-b border-slate-700 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div id="modal-table-badge" class="px-3 py-1 rounded-xl bg-emerald-500 text-slate-950 font-black text-sm">
+                        Mesa 1
+                    </div>
+                    <div>
+                        <h3 id="modal-table-title" class="text-lg font-bold text-white">Comanda Ativa</h3>
+                        <p class="text-xs text-slate-400 flex items-center gap-2">
+                            Cliente: <input type="text" id="comanda-customer-input" placeholder="Nome do Cliente..." class="bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-xs text-emerald-300 focus:outline-none">
+                        </p>
+                    </div>
+                </div>
+                <button onclick="closeComandaModal()" class="text-slate-400 hover:text-white text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body Split into Two Columns -->
+            <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden divide-y lg:divide-y-0 lg:divide-x divide-slate-800">
+                
+                <!-- LEFT COLUMN: Active Comanda Items (5 cols) -->
+                <div class="lg:col-span-5 flex flex-col p-4 bg-slate-900/60 overflow-hidden">
+                    <div class="flex justify-between items-center pb-2 border-b border-slate-800 mb-2">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Itens da Comanda</span>
+                        <span id="comanda-items-count" class="text-xs text-emerald-400 font-bold">0 itens</span>
+                    </div>
+
+                    <!-- Items Scroll Area -->
+                    <div id="comanda-items-list" class="flex-1 overflow-y-auto space-y-2 pr-1">
+                        <!-- Items rendered dynamically -->
+                    </div>
+
+                    <!-- Comanda Totals & Checkout -->
+                    <div class="pt-4 border-t border-slate-800 space-y-3 mt-2">
+                        <div class="flex justify-between text-xs text-slate-400">
+                            <span>Subtotal:</span>
+                            <span id="comanda-subtotal-val" class="font-bold text-white">0 MT</span>
+                        </div>
+                        <div class="flex justify-between text-base font-extrabold text-white">
+                            <span>TOTAL:</span>
+                            <span id="comanda-total-val" class="text-emerald-400 text-xl">0 MT</span>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 pt-1">
+                            <button onclick="saveComandaState()" class="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-floppy-disk"></i> Salvar Comanda
+                            </button>
+                            <button onclick="openPaymentModalForCurrentTable()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
+                                <i class="fa-solid fa-cash-register"></i> Fechar / Pagar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN: Products Selection with Live Search + Categories (7 cols) -->
+                <div class="lg:col-span-7 flex flex-col p-4 overflow-hidden bg-slate-900">
+                    
+                    <!-- 1. LIVE SEARCH FIELD -->
+                    <div class="mb-3">
+                        <div class="relative">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400"></i>
+                            <input type="text" id="comanda-product-search" oninput="handleComandaSearchInput(this.value)" placeholder="🔎 Procurar produto... (ex: chicken, coca, t-bone)" class="w-full bg-slate-800 border-2 border-slate-700 focus:border-emerald-500 rounded-xl pl-10 pr-4 py-2 text-sm text-white placeholder-slate-400 focus:outline-none transition shadow-inner">
+                        </div>
+                    </div>
+
+                    <!-- 2. CATEGORIES FILTER PILLS -->
+                    <div id="comanda-categories-container" class="flex overflow-x-auto gap-1.5 pb-2 mb-3 scrollbar-none">
+                        <!-- Category pills rendered here dynamically -->
+                    </div>
+
+                    <!-- 3. PRODUCT GRID -->
+                    <div id="comanda-product-grid" class="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-2.5 pr-1">
+                        <!-- Product cards rendered here dynamically -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ================= MODAL: PAYMENT / PAGAMENTO ================= -->
+    <div id="payment-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg p-6 space-y-5 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-credit-card text-emerald-400"></i> Finalizar Pagamento
+                </h3>
+                <button onclick="closePaymentModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Amount Banner -->
+            <div class="bg-emerald-950/50 border border-emerald-700/50 p-4 rounded-xl text-center">
+                <p class="text-xs text-emerald-300 font-semibold uppercase">Valor Total a Pagar</p>
+                <h2 id="payment-modal-total" class="text-3xl font-black text-emerald-400 mt-1">0 MT</h2>
+            </div>
+
+            <!-- Payment Method Choice -->
+            <div class="space-y-2">
+                <label class="block text-xs font-bold text-slate-400 uppercase">Selecione o Método de Pagamento</label>
+                <div class="grid grid-cols-3 gap-2 text-xs font-bold">
+                    <button type="button" onclick="selectPaymentMethod('Dinheiro')" id="pay-btn-dinheiro" class="p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white hover:border-emerald-500 text-center">Dinheiro</button>
+                    <button type="button" onclick="selectPaymentMethod('Cartão')" id="pay-btn-cartao" class="p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white hover:border-emerald-500 text-center">Cartão</button>
+                    <button type="button" onclick="selectPaymentMethod('M-Pesa')" id="pay-btn-mpesa" class="p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white hover:border-emerald-500 text-center">M-Pesa</button>
+                    <button type="button" onclick="selectPaymentMethod('e-Mola')" id="pay-btn-emola" class="p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white hover:border-emerald-500 text-center">e-Mola</button>
+                    <button type="button" onclick="selectPaymentMethod('Fiado')" id="pay-btn-fiado" class="p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white hover:border-emerald-500 text-center">Fiado</button>
+                </div>
+            </div>
+
+            <!-- Dynamic Payment Details Inputs -->
+            <div id="payment-details-inputs" class="space-y-3 bg-slate-800/50 p-3 rounded-xl border border-slate-800 text-xs">
+                <!-- Cash Change Calculator -->
+                <div id="pay-details-cash" class="space-y-2">
+                    <label class="block text-slate-300">Valor Entregue pelo Cliente (MT)</label>
+                    <input type="number" id="cash-tendered" oninput="calculateCashChange()" placeholder="Ex: 2000" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white">
+                    <p class="text-xs text-slate-400">Troco: <span id="cash-change-val" class="font-bold text-emerald-400">0 MT</span></p>
+                </div>
+
+                <!-- M-Pesa Inputs -->
+                <div id="pay-details-mpesa" class="space-y-2 hidden">
+                    <div>
+                        <label class="block text-slate-300">Telefone M-Pesa</label>
+                        <input type="text" id="mpesa-phone" placeholder="+258 84/85..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300">Referência da Transação</label>
+                        <input type="text" id="mpesa-ref" placeholder="Ex: MP260914.1942" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white">
+                    </div>
+                </div>
+
+                <!-- e-Mola Inputs -->
+                <div id="pay-details-emola" class="space-y-2 hidden">
+                    <div>
+                        <label class="block text-slate-300">Telefone e-Mola</label>
+                        <input type="text" id="emola-phone" placeholder="+258 86/87..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300">Referência da Transação</label>
+                        <input type="text" id="emola-ref" placeholder="Ex: EM260914.8821" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white">
+                    </div>
+                </div>
+
+                <!-- Fiado Inputs -->
+                <div id="pay-details-fiado" class="space-y-2 hidden">
+                    <div>
+                        <label class="block text-slate-300">Nome do Devedor / Empresa</label>
+                        <input type="text" id="fiado-name" placeholder="Ex: Sr. Carlos - Hotel Bilene" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300">Contacto / Observação</label>
+                        <input type="text" id="fiado-contact" placeholder="+258..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-2 pt-2">
+                <button onclick="closePaymentModal()" class="w-1/2 py-2.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancelar</button>
+                <button onclick="confirmFinalizeSale()" class="w-1/2 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-600/20">
+                    Confirmar Venda
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ================= MODAL: DETALHES DA VENDA (VENDA #000125 RECEIPT VIEW) ================= -->
+    <div id="sale-detail-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 id="sale-detail-title" class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-receipt text-emerald-400"></i> VENDA #000000
+                </h3>
+                <button onclick="closeSaleDetailModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Content Area for Receipt View -->
+            <div id="sale-detail-content" class="text-xs space-y-3 bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono">
+                <!-- Javascript will inject standardized receipt HTML here -->
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button onclick="printSingleSaleReceipt()" class="w-1/2 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-print"></i> Imprimir
+                </button>
+                <button onclick="closeSaleDetailModal()" class="w-1/2 py-2.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ================= PRINTABLE AREA (OFF-SCREEN DISPLAYED ONLY WHEN PRINTING) ================= -->
+    <div id="printable-area" class="hidden">
+        <!-- Javascript injects clean print layout here -->
+    </div>
+
+
+    <!-- ================= JAVASCRIPT LOGIC ================= -->
+    <script>
+        // System Global State & Mock Initial Setup
+        let currentUser = { id: 'edu', name: 'edu', role: 'Garçom' };
+        let activeTab = 'pos';
+        let activeReportSubTab = 'sales_list';
+
+        // Official Menu Categories as requested
+        const CATEGORIES = [
+            "Todas",
+            "Appetizers / Entradas",
+            "Burgers & Meats",
+            "Pizzas",
+            "Grilled Chicken",
+            "Seafood / Marisco",
+            "Whiskey",
+            "Vodka",
+            "Gin",
+            "Rum",
+            "Brandy",
+            "Cervejas",
+            "Cidras",
+            "Shots",
+            "Vinhos & Champanhe",
+            "Refrigerantes",
+            "Sumos",
+            "Água"
+        ];
+
+        // Default Catalog Products
+        let menuCatalog = [
+            { id: "P01", name: "Chicken", category: "Grilled Chicken", price: 450 },
+            { id: "P02", name: "1/4 Chicken", category: "Grilled Chicken", price: 250 },
+            { id: "P03", name: "1/2 Chicken (Zambezian style)", category: "Grilled Chicken", price: 480 },
+            { id: "P04", name: "Full Chicken", category: "Grilled Chicken", price: 850 },
+            { id: "P05", name: "Coca-Cola", category: "Refrigerantes", price: 70 },
+            { id: "P06", name: "T-Bone", category: "Burgers & Meats", price: 750 },
+            { id: "P07", name: "Prawns", category: "Seafood / Marisco", price: 850 },
+            { id: "P08", name: "Pizza Chicken", category: "Pizzas", price: 650 },
+            { id: "P09", name: "Pizza Seafood", category: "Pizzas", price: 750 },
+            { id: "P10", name: "2M Beer 330ml", category: "Cervejas", price: 90 },
+            { id: "P11", name: "Laurentina Preta", category: "Cervejas", price: 100 },
+            { id: "P12", name: "Savanna Dry", category: "Cidras", price: 120 },
+            { id: "P13", name: "Jameson Whiskey 750ml", category: "Whiskey", price: 2200 },
+            { id: "P14", name: "Água Mineral 500ml", category: "Água", price: 50 },
+            { id: "P15", name: "Sumo Compal 330ml", category: "Sumos", price: 100 },
+            { id: "P16", name: "Chamepo Entradas (Chamuças 4x)", category: "Appetizers / Entradas", price: 200 }
+        ];
+
+        // 12 Tables Initial State
+        let tablesData = Array.from({ length: 12 }, (_, i) => ({
+            id: i + 1,
+            name: `Mesa ${i + 1}`,
+            status: 'livre', // 'livre', 'ocupada', 'reservada', 'conta_solicitada'
+            customerName: '',
+            items: []
+        }));
+
+        // Current active comanda filter state inside modal
+        let currentModalTableId = null;
+        let selectedComandaCategory = "Todas";
+        let comandaSearchQuery = "";
+        let selectedPaymentMethod = "Dinheiro";
+
+        // Delivery Orders Array
+        let deliveryOrders = [
+            {
+                id: "DEL-101",
+                customerName: "Dra. Maria (Praia de Bilene)",
+                phone: "+258 841234567",
+                address: "Vila de Bilene, Residência 45",
+                items: [{ productId: "P04", productName: "Full Chicken", category: "Grilled Chicken", quantity: 1, unitPrice: 850, subtotal: 850 }, { productId: "P05", productName: "Coca-Cola", category: "Refrigerantes", quantity: 2, unitPrice: 70, subtotal: 140 }],
+                total: 990,
+                status: "A Caminho",
+                operator: "edu"
+            }
+        ];
+
+        // Immutable Sales History (Stores exact snapshot objects at checkout time)
+        let salesHistory = [
+            {
+                saleId: "VENDA-#000120",
+                date: "2026-09-12",
+                time: "12:35",
+                userId: "edu",
+                username: "edu",
+                role: "Garçom",
+                tableId: "Mesa 3",
+                customerId: "C-01",
+                customerName: "Sr. Fernando",
+                items: [
+                    { productId: "P06", productName: "T-Bone", category: "Burgers & Meats", quantity: 2, unitPrice: 750, subtotal: 1500 }
+                ],
+                subtotal: 1500,
+                total: 1500,
+                paymentMethod: "Dinheiro",
+                paymentDetails: { cashTendered: 2000, change: 500 }
+            },
+            {
+                saleId: "VENDA-#000121",
+                date: "2026-09-12",
+                time: "14:10",
+                userId: "moises",
+                username: "moises",
+                role: "Garçom",
+                tableId: "Mesa 1",
+                customerId: "C-02",
+                customerName: "Anabela",
+                items: [
+                    { productId: "P04", productName: "Full Chicken", category: "Grilled Chicken", quantity: 1, unitPrice: 850, subtotal: 850 },
+                    { productId: "P05", productName: "Coca-Cola", category: "Refrigerantes", quantity: 4, unitPrice: 70, subtotal: 280 }
+                ],
+                subtotal: 1130,
+                total: 1130,
+                paymentMethod: "M-Pesa",
+                paymentDetails: { phone: "+258849876543", reference: "MP260912.1410" }
+            },
+            {
+                saleId: "VENDA-#000122",
+                date: "2026-09-13",
+                time: "19:20",
+                userId: "edu",
+                username: "edu",
+                role: "Garçom",
+                tableId: "Mesa 7",
+                customerId: "C-03",
+                customerName: "João",
+                items: [
+                    { productId: "P06", productName: "T-Bone", category: "Burgers & Meats", quantity: 2, unitPrice: 750, subtotal: 1500 },
+                    { productId: "P05", productName: "Coca-Cola", category: "Refrigerantes", quantity: 2, unitPrice: 70, subtotal: 140 },
+                    { productId: "P07", productName: "Prawns", category: "Seafood / Marisco", quantity: 1, unitPrice: 850, subtotal: 850 }
+                ],
+                subtotal: 2490,
+                total: 2490,
+                paymentMethod: "M-Pesa",
+                paymentDetails: { phone: "+258843219876", reference: "MP260913.1920" }
+            },
+            {
+                saleId: "VENDA-#000123",
+                date: "2026-09-14",
+                time: "12:35",
+                userId: "edu",
+                username: "edu",
+                role: "Garçom",
+                tableId: "Mesa 3",
+                customerId: "C-04",
+                customerName: "Carlos Bilene",
+                items: [
+                    { productId: "P06", productName: "T-Bone", category: "Burgers & Meats", quantity: 2, unitPrice: 750, subtotal: 1500 }
+                ],
+                subtotal: 1500,
+                total: 1500,
+                paymentMethod: "Dinheiro",
+                paymentDetails: { cashTendered: 1500, change: 0 }
+            },
+            {
+                saleId: "VENDA-#000124",
+                date: "2026-09-14",
+                time: "18:20",
+                userId: "edu",
+                username: "edu",
+                role: "Garçom",
+                tableId: "Mesa 7",
+                customerId: "C-05",
+                customerName: "Marta",
+                items: [
+                    { productId: "P06", productName: "T-Bone", category: "Burgers & Meats", quantity: 1, unitPrice: 750, subtotal: 750 },
+                    { productId: "P05", productName: "Coca-Cola", category: "Refrigerantes", quantity: 3, unitPrice: 70, subtotal: 210 }
+                ],
+                subtotal: 960,
+                total: 960,
+                paymentMethod: "Cartão",
+                paymentDetails: { auth: "POS-8821" }
+            },
+            {
+                saleId: "VENDA-#000125",
+                date: "2026-09-14",
+                time: "20:15",
+                userId: "moises",
+                username: "moises",
+                role: "Garçom",
+                tableId: "Mesa 4",
+                customerId: "C-06",
+                customerName: "Empresa X",
+                items: [
+                    { productId: "P06", productName: "T-Bone", category: "Burgers & Meats", quantity: 2, unitPrice: 750, subtotal: 1500 },
+                    { productId: "P07", productName: "Prawns", category: "Seafood / Marisco", quantity: 2, unitPrice: 850, subtotal: 1700 }
+                ],
+                subtotal: 3200,
+                total: 3200,
+                paymentMethod: "e-Mola",
+                paymentDetails: { phone: "+258861112223", reference: "EM260914.2015" }
+            }
+        ];
+
+        // Initialization on Load
+        window.onload = function() {
+            renderTablesGrid();
+            renderCatalogTable();
+            populateReportCategoryFilter();
+            initReportDefaultDates();
+            applyReportFilters();
+        };
+
+        // Navigation Tab Switching
+        function switchTab(tab) {
+            activeTab = tab;
+            document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(`section-${tab}`).classList.remove('hidden');
+
+            // Style nav buttons
+            ['pos', 'delivery', 'catalog', 'reports'].forEach(t => {
+                const btn = document.getElementById(`nav-${t}`);
+                if (btn) {
+                    if (t === tab) {
+                        btn.className = "px-4 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-2 bg-emerald-600 text-white shadow";
+                    } else {
+                        btn.className = "px-4 py-2 rounded-xl text-sm font-semibold text-slate-300 hover:bg-slate-700 transition flex items-center gap-2";
+                    }
+                }
+            });
+
+            if (tab === 'reports') {
+                applyReportFilters();
+            }
+        }
+
+        // Change current logged in operator
+        function changeCurrentUser(val) {
+            currentUser.id = val;
+            currentUser.name = val;
+            currentUser.role = val === 'admin' ? 'Gerente' : 'Garçom';
+        }
+
+        // Render 12 Tables Grid
+        function renderTablesGrid() {
+            const grid = document.getElementById('tables-grid');
+            grid.innerHTML = '';
+
+            tablesData.forEach(tbl => {
+                const itemCount = tbl.items.reduce((acc, item) => acc + item.quantity, 0);
+                const totalAmt = tbl.items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
+
+                let statusColor = "bg-emerald-500/10 border-emerald-500/40 text-emerald-400";
+                let badgeColor = "bg-emerald-500 text-slate-950";
+                let statusText = "Livre";
+
+                if (tbl.status === 'ocupada') {
+                    statusColor = "bg-rose-500/10 border-rose-500/40 text-rose-400";
+                    badgeColor = "bg-rose-500 text-white";
+                    statusText = "Ocupada";
+                } else if (tbl.status === 'reservada') {
+                    statusColor = "bg-amber-500/10 border-amber-500/40 text-amber-400";
+                    badgeColor = "bg-amber-500 text-slate-950";
+                    statusText = "Reservada";
+                } else if (tbl.status === 'conta_solicitada') {
+                    statusColor = "bg-cyan-500/10 border-cyan-500/40 text-cyan-400";
+                    badgeColor = "bg-cyan-500 text-slate-950";
+                    statusText = "Conta Solicitada";
+                }
+
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-2xl border ${statusColor} bg-slate-800/80 flex flex-col justify-between h-44 cursor-pointer hover:scale-[1.02] transition shadow-lg`;
+                card.onclick = () => openComandaModal(tbl.id);
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-xs text-slate-400 font-bold block">${tbl.name}</span>
+                            <span class="text-sm font-black text-white">${tbl.customerName ? tbl.customerName : 'Sem Cliente'}</span>
+                        </div>
+                        <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full ${badgeColor}">${statusText}</span>
+                    </div>
+
+                    <div class="my-2 border-t border-slate-700/50 pt-2">
+                        <p class="text-xs text-slate-400">${itemCount} itens na comanda</p>
+                        <p class="text-lg font-black text-emerald-400">${totalAmt.toLocaleString()} MT</p>
+                    </div>
+
+                    <div class="flex gap-1.5 pt-1">
+                        <button onclick="event.stopPropagation(); openComandaModal(${tbl.id});" class="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold rounded-xl flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-cart-plus"></i> Abrir / Comanda
+                        </button>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+
+        // Open Comanda Modal for specific Table
+        function openComandaModal(tableId) {
+            currentModalTableId = tableId;
+            const tbl = tablesData.find(t => t.id === tableId);
+            
+            document.getElementById('modal-table-badge').innerText = tbl.name;
+            document.getElementById('modal-table-title').innerText = `Comanda - ${tbl.name}`;
+            document.getElementById('comanda-customer-input').value = tbl.customerName || '';
+
+            // Reset search & category filters
+            comandaSearchQuery = "";
+            document.getElementById('comanda-product-search').value = "";
+            selectedComandaCategory = "Todas";
+
+            renderComandaCategoryPills();
+            renderComandaProductGrid();
+            renderComandaItemsList();
+
+            document.getElementById('comanda-modal').classList.remove('hidden');
+        }
+
+        function closeComandaModal() {
+            if (currentModalTableId) {
+                const tbl = tablesData.find(t => t.id === currentModalTableId);
+                if (tbl) {
+                    tbl.customerName = document.getElementById('comanda-customer-input').value.trim();
+                }
+            }
+            document.getElementById('comanda-modal').classList.add('hidden');
+            renderTablesGrid();
+        }
+
+        // Render Category Filter Pills in Comanda
+        function renderComandaCategoryPills() {
+            const container = document.getElementById('comanda-categories-container');
+            container.innerHTML = '';
+
+            CATEGORIES.forEach(cat => {
+                const pill = document.createElement('button');
+                const isActive = cat === selectedComandaCategory;
+                pill.className = `px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
+                    isActive ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20' : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
+                }`;
+                pill.innerText = cat;
+                pill.onclick = () => {
+                    selectedComandaCategory = cat;
+                    renderComandaCategoryPills();
+                    renderComandaProductGrid();
+                };
+                container.appendChild(pill);
+            });
+        }
+
+        // Handle Live Search Input in Comanda Screen (Requirement 1 & 4)
+        function handleComandaSearchInput(val) {
+            comandaSearchQuery = val.trim().toLowerCase();
+            renderComandaProductGrid();
+        }
+
+        // Render Product Grid based on Live Search & Category (Requirement 1 & 2)
+        function renderComandaProductGrid() {
+            const grid = document.getElementById('comanda-product-grid');
+            grid.innerHTML = '';
+
+            const filtered = menuCatalog.filter(prod => {
+                const matchCategory = selectedComandaCategory === 'Todas' || prod.category === selectedComandaCategory;
+                const matchSearch = comandaSearchQuery === '' || prod.name.toLowerCase().includes(comandaSearchQuery);
+                return matchCategory && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full py-12 text-center text-slate-500">
+                        <i class="fa-solid fa-magnifying-glass text-3xl mb-2"></i>
+                        <p class="text-xs">Nenhum produto encontrado com "${comandaSearchQuery}"</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(prod => {
+                const card = document.createElement('div');
+                card.className = "p-3 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 hover:border-emerald-500/60 rounded-xl cursor-pointer transition flex flex-col justify-between group shadow-sm";
+                card.onclick = () => addProductToComanda(prod);
+
+                card.innerHTML = `
+                    <div>
+                        <span class="text-[10px] text-emerald-400 font-bold block uppercase tracking-wider">${prod.category}</span>
+                        <h4 class="text-xs font-bold text-white group-hover:text-emerald-300 transition mt-0.5 line-clamp-2">${prod.name}</h4>
+                    </div>
+                    <div class="mt-3 flex justify-between items-center pt-2 border-t border-slate-700/60">
+                        <span class="text-xs font-black text-emerald-400">${prod.price.toLocaleString()} MT</span>
+                        <span class="text-[10px] bg-emerald-600 text-white font-bold px-2 py-1 rounded-lg shadow">
+                            + Adicionar
+                        </span>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        // Add or increment product in comanda (Requirement 3)
+        function addProductToComanda(prod) {
+            if (!currentModalTableId) return;
+            const tbl = tablesData.find(t => t.id === currentModalTableId);
+            if (!tbl) return;
+
+            if (tbl.status === 'livre') {
+                tbl.status = 'ocupada';
+            }
+
+            const existing = tbl.items.find(item => item.productId === prod.id);
+            if (existing) {
+                existing.quantity += 1;
+            } else {
+                tbl.items.push({
+                    productId: prod.id,
+                    productName: prod.name,
+                    category: prod.category,
+                    quantity: 1,
+                    unitPrice: prod.price
+                });
+            }
+
+            renderComandaItemsList();
+            renderTablesGrid();
+        }
+
+        // Adjust quantity (+ / - / Remover)
+        function updateComandaItemQty(prodId, delta) {
+            if (!currentModalTableId) return;
+            const tbl = tablesData.find(t => t.id === currentModalTableId);
+            if (!tbl) return;
+
+            const idx = tbl.items.findIndex(item => item.productId === prodId);
+            if (idx !== -1) {
+                tbl.items[idx].quantity += delta;
+                if (tbl.items[idx].quantity <= 0) {
+                    tbl.items.splice(idx, 1);
+                }
+            }
+            renderComandaItemsList();
+            renderTablesGrid();
+        }
+
+        function removeComandaItem(prodId) {
+            if (!currentModalTableId) return;
+            const tbl = tablesData.find(t => t.id === currentModalTableId);
+            if (!tbl) return;
+
+            tbl.items = tbl.items.filter(item => item.productId !== prodId);
+            renderComandaItemsList();
+            renderTablesGrid();
+        }
+
+        // Render Active Comanda Items in Left Column
+        function renderComandaItemsList() {
+            const container = document.getElementById('comanda-items-list');
+            container.innerHTML = '';
+
+            if (!currentModalTableId) return;
+            const tbl = tablesData.find(t => t.id === currentModalTableId);
+            if (!tbl) return;
+
+            let subtotalTotal = 0;
+            let totalCount = 0;
+
+            if (tbl.items.length === 0) {
+                container.innerHTML = `
+                    <div class="py-16 text-center text-slate-500">
+                        <i class="fa-solid fa-basket-shopping text-4xl mb-2 text-slate-700"></i>
+                        <p class="text-xs">Nenhum produto na comanda.</p>
+                        <p class="text-[10px] text-slate-600 mt-1">Use a barra de pesquisa ou categorias ao lado para adicionar.</p>
+                    </div>
+                `;
+            } else {
+                tbl.items.forEach(item => {
+                    const itemSubtotal = item.quantity * item.unitPrice;
+                    subtotalTotal += itemSubtotal;
+                    totalCount += item.quantity;
+
+                    const row = document.createElement('div');
+                    row.className = "bg-slate-800 p-2.5 rounded-xl border border-slate-700/80 flex items-center justify-between text-xs";
+                    row.innerHTML = `
+                        <div class="flex-1 pr-2">
+                            <h5 class="font-bold text-white">${item.productName}</h5>
+                            <p class="text-[10px] text-slate-400">${item.unitPrice.toLocaleString()} MT cada</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="flex items-center bg-slate-900 border border-slate-700 rounded-lg p-0.5">
+                                <button onclick="updateComandaItemQty('${item.productId}', -1)" class="w-6 h-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded">-</button>
+                                <span class="px-2 text-xs font-bold text-emerald-400">${item.quantity}</span>
+                                <button onclick="updateComandaItemQty('${item.productId}', 1)" class="w-6 h-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded">+</button>
+                            </div>
+                            <span class="font-extrabold text-white min-w-[65px] text-right">${itemSubtotal.toLocaleString()} MT</span>
+                            <button onclick="removeComandaItem('${item.productId}')" class="text-rose-400 hover:text-rose-300 p-1">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(row);
+                });
+            }
+
+            document.getElementById('comanda-items-count').innerText = `${totalCount} itens`;
+            document.getElementById('comanda-subtotal-val').innerText = `${subtotalTotal.toLocaleString()} MT`;
+            document.getElementById('comanda-total-val').innerText = `${subtotalTotal.toLocaleString()} MT`;
+        }
+
+        function saveComandaState() {
+            if (currentModalTableId) {
+                const tbl = tablesData.find(t => t.id === currentModalTableId);
+                if (tbl) {
+                    tbl.customerName = document.getElementById('comanda-customer-input').value.trim();
+                }
+            }
+            renderTablesGrid();
+            closeComandaModal();
+        }
+
+        // Payment Modal & Finalize Checkout (Requirements 19 & 20)
+        function openPaymentModalForCurrentTable() {
+            if (!currentModalTableId) return;
+            const tbl = tablesData.find(t => t.id === currentModalTableId);
+            if (!tbl || tbl.items.length === 0) {
+                alert("Adicione pelo menos um produto à comanda para fechar a conta.");
+                return;
+            }
+
+            tbl.customerName = document.getElementById('comanda-customer-input').value.trim();
+
+            const total = tbl.items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
+            document.getElementById('payment-modal-total').innerText = `${total.toLocaleString()} MT`;
+
+            selectPaymentMethod('Dinheiro');
+            document.getElementById('payment-modal').classList.remove('hidden');
+        }
+
+        function closePaymentModal() {
+            document.getElementById('payment-modal').classList.add('hidden');
+        }
+
+        function selectPaymentMethod(method) {
+            selectedPaymentMethod = method;
+            ['dinheiro', 'cartao', 'mpesa', 'emola', 'fiado'].forEach(m => {
+                const btn = document.getElementById(`pay-btn-${m}`);
+                if (btn) {
+                    btn.className = "p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white hover:border-emerald-500 text-center";
+                }
+                const detailBlock = document.getElementById(`pay-details-${m}`);
+                if (detailBlock) detailBlock.classList.add('hidden');
+            });
+
+            const activeBtn = document.getElementById(`pay-btn-${method.toLowerCase().replace('-', '')}`);
+            if (activeBtn) {
+                activeBtn.className = "p-2.5 rounded-xl border-2 border-emerald-500 bg-emerald-950/40 text-emerald-300 font-bold text-center shadow-lg";
+            }
+            const activeBlock = document.getElementById(`pay-details-${method.toLowerCase().replace('-', '')}`);
+            if (activeBlock) activeBlock.classList.remove('hidden');
+
+            calculateCashChange();
+        }
+
+        function calculateCashChange() {
+            if (!currentModalTableId) return;
+            const tbl = tablesData.find(t => t.id === currentModalTableId);
+            if (!tbl) return;
+
+            const total = tbl.items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
+            const tendered = parseFloat(document.getElementById('cash-tendered').value) || 0;
+            const change = Math.max(0, tendered - total);
+            document.getElementById('cash-change-val').innerText = `${change.toLocaleString()} MT`;
+        }
+
+        // Confirm Checkout & Create Immutable History Snapshot (Requirement 19)
+        function confirmFinalizeSale() {
+            if (!currentModalTableId) return;
+            const tbl = tablesData.find(t => t.id === currentModalTableId);
+            if (!tbl || tbl.items.length === 0) return;
+
+            const subtotal = tbl.items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
+            const total = subtotal;
+
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+            const timeStr = now.toTimeString().split(' ')[0].substring(0, 5); // HH:MM
+
+            const saleId = `VENDA-#${String(salesHistory.length + 101).padStart(6, '0')}`;
+
+            let paymentDetails = {};
+            if (selectedPaymentMethod === 'Dinheiro') {
+                const tendered = parseFloat(document.getElementById('cash-tendered').value) || total;
+                paymentDetails = { cashTendered: tendered, change: Math.max(0, tendered - total) };
+            } else if (selectedPaymentMethod === 'M-Pesa') {
+                paymentDetails = {
+                    phone: document.getElementById('mpesa-phone').value.trim() || "+258 840000000",
+                    reference: document.getElementById('mpesa-ref').value.trim() || `MP${Date.now()}`
+                };
+            } else if (selectedPaymentMethod === 'e-Mola') {
+                paymentDetails = {
+                    phone: document.getElementById('emola-phone').value.trim() || "+258 860000000",
+                    reference: document.getElementById('emola-ref').value.trim() || `EM${Date.now()}`
+                };
+            } else if (selectedPaymentMethod === 'Fiado') {
+                paymentDetails = {
+                    debtorName: document.getElementById('fiado-name').value.trim() || tbl.customerName || "Cliente Fiado",
+                    contact: document.getElementById('fiado-contact').value.trim() || "N/A"
+                };
+            }
+
+            // MANDATORY IMMUTABLE SALES SNAPSHOT (Requirement 19)
+            const saleRecord = {
+                saleId: saleId,
+                date: dateStr,
+                time: timeStr,
+                userId: currentUser.id,
+                username: currentUser.name,
+                role: currentUser.role,
+                tableId: tbl.name,
+                customerId: `C-${Math.floor(Math.random() * 1000)}`,
+                customerName: tbl.customerName || "Cliente Balcão",
+                items: tbl.items.map(i => ({
+                    productId: i.productId,
+                    productName: i.productName,
+                    category: i.category,
+                    quantity: i.quantity,
+                    unitPrice: i.unitPrice,
+                    subtotal: i.quantity * i.unitPrice
+                })),
+                subtotal: subtotal,
+                total: total,
+                paymentMethod: selectedPaymentMethod,
+                paymentDetails: paymentDetails
+            };
+
+            salesHistory.push(saleRecord);
+
+            // Reset Table State
+            tbl.items = [];
+            tbl.customerName = "";
+            tbl.status = "livre";
+
+            closePaymentModal();
+            closeComandaModal();
+            renderTablesGrid();
+
+            // Open Single Sale Receipt View (Requirement 9)
+            openSingleSaleModal(saleRecord);
+        }
+
+        // Open Single Sale Modal Receipt View (#000125 format - Requirement 9)
+        function openSingleSaleModal(sale) {
+            document.getElementById('sale-detail-title').innerText = `${sale.saleId}`;
+
+            const itemsRows = sale.items.map(i => `
+                <div class="flex justify-between py-1 border-b border-slate-800/60">
+                    <span>${i.productName} × ${i.quantity}</span>
+                    <span class="font-bold">${i.subtotal.toLocaleString()} MT</span>
+                </div>
+            `).join('');
+
+            let paymentDetailInfo = '';
+            if (sale.paymentMethod === 'M-Pesa' || sale.paymentMethod === 'e-Mola') {
+                paymentDetailInfo = `<p class="text-[10px] text-slate-400">Tel: ${sale.paymentDetails.phone || 'N/A'} | Ref: ${sale.paymentDetails.reference || 'N/A'}</p>`;
+            }
+
+            const html = `
+                <div class="text-center border-b border-slate-800 pb-3">
+                    <h4 class="font-bold text-white text-sm">MOZEDUMAR</h4>
+                    <p class="text-[10px] text-emerald-400 uppercase">Restauração & Entrega ao Domicílio</p>
+                    <p class="text-[10px] text-slate-400">Praia do Bilene | +258 879576355 / +258 878788071</p>
+                </div>
+                <div class="space-y-1 text-[11px] pt-1 text-slate-300">
+                    <p><strong>Venda:</strong> ${sale.saleId}</p>
+                    <p><strong>Data:</strong> ${sale.date} &nbsp;|&nbsp; <strong>Hora:</strong> ${sale.time}</p>
+                    <p><strong>Mesa:</strong> ${sale.tableId} &nbsp;|&nbsp; <strong>Cliente:</strong> ${sale.customerName}</p>
+                    <p><strong>Operador:</strong> ${sale.username} (${sale.role})</p>
+                    <p><strong>Método de Pagamento:</strong> ${sale.paymentMethod}</p>
+                    ${paymentDetailInfo}
+                </div>
+                <div class="pt-2 border-t border-slate-800">
+                    <p class="font-bold text-slate-400 mb-1 uppercase text-[10px]">Itens Consumidos:</p>
+                    ${itemsRows}
+                </div>
+                <div class="pt-3 border-t border-slate-700 flex justify-between text-sm font-black text-emerald-400">
+                    <span>TOTAL:</span>
+                    <span>${sale.total.toLocaleString()} MT</span>
+                </div>
+            `;
+
+            document.getElementById('sale-detail-content').innerHTML = html;
+            document.getElementById('sale-detail-modal').classList.remove('hidden');
+        }
+
+        function closeSaleDetailModal() {
+            document.getElementById('sale-detail-modal').classList.add('hidden');
+        }
+
+
+        // ================= ADVANCED REPORTS ENGINE =================
+
+        function populateReportCategoryFilter() {
+            const select = document.getElementById('rpt-category');
+            select.innerHTML = '<option value="all">Todas as Categorias</option>';
+            CATEGORIES.filter(c => c !== 'Todas').forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c;
+                opt.innerText = c;
+                select.appendChild(opt);
+            });
+        }
+
+        function initReportDefaultDates() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('rpt-start-date').value = today;
+            document.getElementById('rpt-end-date').value = today;
+            document.getElementById('rpt-start-time').value = "00:00";
+            document.getElementById('rpt-end-time').value = "23:59";
+        }
+
+        function handlePeriodPresetChange() {
+            const val = document.getElementById('rpt-period').value;
+            const customBox = document.getElementById('custom-date-container');
+            if (val === 'custom') {
+                customBox.classList.remove('hidden');
+            } else {
+                customBox.classList.add('hidden');
+            }
+            applyReportFilters();
+        }
+
+        // Filter calculation core
+        function getFilteredSales() {
+            const period = document.getElementById('rpt-period').value;
+            const userFilter = document.getElementById('rpt-user').value;
+            const categoryFilter = document.getElementById('rpt-category').value;
+            const productFilter = document.getElementById('rpt-product').value.trim().toLowerCase();
+            const tableFilter = document.getElementById('rpt-table').value;
+            const paymentFilter = document.getElementById('rpt-payment').value;
+            const customerFilter = document.getElementById('rpt-customer').value.trim().toLowerCase();
+
+            const today = "2026-09-14"; // Fixed context date
+
+            return salesHistory.filter(sale => {
+                // 1. Date Period Filter
+                if (period === 'today') {
+                    if (sale.date !== today) return false;
+                } else if (period === 'yesterday') {
+                    if (sale.date !== '2026-09-13') return false;
+                } else if (period === 'last7') {
+                    if (sale.date < '2026-09-07' || sale.date > today) return false;
+                } else if (period === 'last30' || period === 'thisMonth') {
+                    if (!sale.date.startsWith('2026-09')) return false;
+                } else if (period === 'lastMonth') {
+                    if (!sale.date.startsWith('2026-08')) return false;
+                } else if (period === 'custom') {
+                    const startDate = document.getElementById('rpt-start-date').value;
+                    const endDate = document.getElementById('rpt-end-date').value;
+                    const startTime = document.getElementById('rpt-start-time').value || "00:00";
+                    const endTime = document.getElementById('rpt-end-time').value || "23:59";
+
+                    if (startDate && sale.date < startDate) return false;
+                    if (endDate && sale.date > endDate) return false;
+                    if (startDate && sale.date === startDate && sale.time < startTime) return false;
+                    if (endDate && sale.date === endDate && sale.time > endTime) return false;
+                }
+
+                // 2. User Filter
+                if (userFilter !== 'all' && sale.userId !== userFilter) return false;
+
+                // 3. Table Filter
+                if (tableFilter !== 'all') {
+                    if (tableFilter === 'delivery' && !sale.tableId.includes('Delivery')) return false;
+                    if (tableFilter !== 'delivery' && sale.tableId !== `Mesa ${tableFilter}`) return false;
+                }
+
+                // 4. Payment Filter
+                if (paymentFilter !== 'all' && sale.paymentMethod !== paymentFilter) return false;
+
+                // 5. Customer Filter
+                if (customerFilter && !sale.customerName.toLowerCase().includes(customerFilter)) return false;
+
+                // 6. Category & Product Filter inside items
+                if (categoryFilter !== 'all' || productFilter !== '') {
+                    const hasItem = sale.items.some(item => {
+                        const matchCat = categoryFilter === 'all' || item.category === categoryFilter;
+                        const matchProd = productFilter === '' || item.productName.toLowerCase().includes(productFilter);
+                        return matchCat && matchProd;
+                    });
+                    if (!hasItem) return false;
+                }
+
+                return true;
+            });
+        }
+
+        // Main function called on filter update
+        function applyReportFilters() {
+            const filteredSales = getFilteredSales();
+
+            // Calculate KPI Dashboard Metrics (Requirement 17)
+            let totalRevenue = 0;
+            let totalItemsCount = 0;
+            let cashSum = 0, cardSum = 0, mpesaSum = 0, emolaSum = 0, fiadoSum = 0;
+
+            filteredSales.forEach(s => {
+                totalRevenue += s.total;
+                s.items.forEach(i => totalItemsCount += i.quantity);
+                if (s.paymentMethod === 'Dinheiro') cashSum += s.total;
+                else if (s.paymentMethod === 'Cartão') cardSum += s.total;
+                else if (s.paymentMethod === 'M-Pesa') mpesaSum += s.total;
+                else if (s.paymentMethod === 'e-Mola') emolaSum += s.total;
+                else if (s.paymentMethod === 'Fiado') fiadoSum += s.total;
+            });
+
+            const ticketMedio = filteredSales.length > 0 ? (totalRevenue / filteredSales.length) : 0;
+
+            document.getElementById('kpi-vendas-hoje').innerText = `${totalRevenue.toLocaleString()} MT`;
+            document.getElementById('kpi-num-vendas').innerText = filteredSales.length;
+            document.getElementById('kpi-itens-vendidos').innerText = totalItemsCount;
+            document.getElementById('kpi-ticket-medio').innerText = `${Math.round(ticketMedio).toLocaleString()} MT`;
+            document.getElementById('kpi-dinheiro').innerText = `${cashSum.toLocaleString()} MT`;
+            document.getElementById('kpi-cartao').innerText = `${cardSum.toLocaleString()} MT`;
+            document.getElementById('kpi-mpesa').innerText = `${mpesaSum.toLocaleString()} MT`;
+            document.getElementById('kpi-emola').innerText = `${emolaSum.toLocaleString()} MT`;
+            document.getElementById('kpi-fiado').innerText = `${fiadoSum.toLocaleString()} MT`;
+
+            // Render current active sub-tab view
+            renderActiveReportTab(filteredSales);
+        }
+
+        function clearReportFilters() {
+            document.getElementById('rpt-period').value = 'today';
+            document.getElementById('rpt-user').value = 'all';
+            document.getElementById('rpt-category').value = 'all';
+            document.getElementById('rpt-product').value = '';
+            document.getElementById('rpt-table').value = 'all';
+            document.getElementById('rpt-payment').value = 'all';
+            document.getElementById('rpt-customer').value = '';
+            document.getElementById('custom-date-container').classList.add('hidden');
+            initReportDefaultDates();
+            applyReportFilters();
+        }
+
+        function switchReportTab(subTab) {
+            activeReportSubTab = subTab;
+            const tabs = ['sales_list', 'by_user', 'by_product', 'by_table', 'by_payment', 'matrix_user_day', 'user_product', 'granular_log'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`rpt-tab-${t}`);
+                if (btn) {
+                    if (t === subTab) {
+                        btn.className = "px-4 py-2 font-bold rounded-t-xl bg-emerald-600 text-white border-b-2 border-emerald-400 whitespace-nowrap";
+                    } else {
+                        btn.className = "px-4 py-2 font-bold rounded-t-xl bg-slate-800 text-slate-300 hover:text-white whitespace-nowrap";
+                    }
+                }
+            });
+            applyReportFilters();
+        }
+
+        // Render Active Report Sub-Tab View
+        function renderActiveReportTab(sales) {
+            const container = document.getElementById('report-tab-content');
+
+            // 1. LISTA DE VENDAS
+            if (activeReportSubTab === 'sales_list') {
+                if (sales.length === 0) {
+                    container.innerHTML = `<p class="text-xs text-slate-400 py-8 text-center">Nenhuma venda encontrada para os filtros selecionados.</p>`;
+                    return;
+                }
+                let rows = sales.map(s => `
+                    <tr class="hover:bg-slate-700/50 transition border-b border-slate-700/50 text-xs">
+                        <td class="p-3 font-bold text-emerald-400">${s.saleId}</td>
+                        <td class="p-3 text-slate-300">${s.date} ${s.time}</td>
+                        <td class="p-3 text-white font-semibold">${s.tableId}</td>
+                        <td class="p-3 text-slate-300">${s.customerName}</td>
+                        <td class="p-3 font-bold text-slate-200">${s.username}</td>
+                        <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-700 text-emerald-300 border border-slate-600">${s.paymentMethod}</span></td>
+                        <td class="p-3 font-black text-white text-right">${s.total.toLocaleString()} MT</td>
+                        <td class="p-3 text-right">
+                            <button onclick="viewSaleDetails('${s.saleId}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-bold">Ver Detalhes</button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                container.innerHTML = `
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-700">
+                                <tr>
+                                    <th class="p-3">ID Venda</th>
+                                    <th class="p-3">Data / Hora</th>
+                                    <th class="p-3">Mesa</th>
+                                    <th class="p-3">Cliente</th>
+                                    <th class="p-3">Operador</th>
+                                    <th class="p-3">Pagamento</th>
+                                    <th class="p-3 text-right">Total</th>
+                                    <th class="p-3 text-right">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            // 2. VENDAS POR UTILIZADOR (Requirement 6 & 7)
+            else if (activeReportSubTab === 'by_user') {
+                const userStats = {};
+                sales.forEach(s => {
+                    if (!userStats[s.username]) {
+                        userStats[s.username] = { name: s.username, salesCount: 0, itemsCount: 0, revenue: 0 };
+                    }
+                    userStats[s.username].salesCount += 1;
+                    userStats[s.username].revenue += s.total;
+                    s.items.forEach(i => userStats[s.username].itemsCount += i.quantity);
+                });
+
+                let totalSales = 0, totalItems = 0, totalRevenue = 0;
+                let rows = Object.values(userStats).map(u => {
+                    totalSales += u.salesCount;
+                    totalItems += u.itemsCount;
+                    totalRevenue += u.revenue;
+                    return `
+                        <tr class="hover:bg-slate-700/50 transition border-b border-slate-700/50 text-xs">
+                            <td class="p-3 font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-user-circle text-emerald-400 text-sm"></i> ${u.name}
+                            </td>
+                            <td class="p-3 text-slate-300 font-semibold">${u.salesCount}</td>
+                            <td class="p-3 text-slate-300">${u.itemsCount}</td>
+                            <td class="p-3 font-black text-emerald-400">${u.revenue.toLocaleString()} MT</td>
+                            <td class="p-3 text-right">
+                                <button onclick="filterByUserDetail('${u.name}')" class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-emerald-300 rounded-lg text-[10px] font-bold">Ver Vendas do Operator</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                container.innerHTML = `
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-700">
+                                <tr>
+                                    <th class="p-3">Utilizador</th>
+                                    <th class="p-3">Nº Vendas</th>
+                                    <th class="p-3">Itens Vendidos</th>
+                                    <th class="p-3">Receita Total</th>
+                                    <th class="p-3 text-right">Detalhes</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                            <tfoot class="bg-slate-900/80 font-bold border-t border-slate-700 text-white">
+                                <tr>
+                                    <td class="p-3">TOTAL:</td>
+                                    <td class="p-3">${totalSales}</td>
+                                    <td class="p-3">${totalItems}</td>
+                                    <td class="p-3 text-emerald-400 font-black">${totalRevenue.toLocaleString()} MT</td>
+                                    <td class="p-3"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                `;
+            }
+
+            // 3. PRODUTOS VENDIDOS (Requirement 8)
+            else if (activeReportSubTab === 'by_product') {
+                const prodStats = {};
+                sales.forEach(s => {
+                    s.items.forEach(i => {
+                        if (!prodStats[i.productName]) {
+                            prodStats[i.productName] = { name: i.productName, category: i.category, qty: 0, price: i.unitPrice, total: 0 };
+                        }
+                        prodStats[i.productName].qty += i.quantity;
+                        prodStats[i.productName].total += i.subtotal;
+                    });
+                });
+
+                const sortedProds = Object.values(prodStats).sort((a, b) => b.qty - a.qty);
+
+                let rows = sortedProds.map(p => `
+                    <tr class="hover:bg-slate-700/50 transition border-b border-slate-700/50 text-xs">
+                        <td class="p-3 font-bold text-white">${p.name}</td>
+                        <td class="p-3 text-slate-400">${p.category}</td>
+                        <td class="p-3 font-black text-emerald-300">${p.qty}</td>
+                        <td class="p-3 text-slate-300">${p.price.toLocaleString()} MT</td>
+                        <td class="p-3 font-black text-white text-right">${p.total.toLocaleString()} MT</td>
+                    </tr>
+                `).join('');
+
+                container.innerHTML = `
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-700">
+                                <tr>
+                                    <th class="p-3">Produto</th>
+                                    <th class="p-3">Categoria</th>
+                                    <th class="p-3">Quantidade Sold</th>
+                                    <th class="p-3">Preço Unitário</th>
+                                    <th class="p-3 text-right">Total Receita</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            // 4. POR MESA (Requirement 10)
+            else if (activeReportSubTab === 'by_table') {
+                const tableStats = {};
+                sales.forEach(s => {
+                    if (!tableStats[s.tableId]) {
+                        tableStats[s.tableId] = { table: s.tableId, count: 0, total: 0, operators: new Set() };
+                    }
+                    tableStats[s.tableId].count += 1;
+                    tableStats[s.tableId].total += s.total;
+                    tableStats[s.tableId].operators.add(s.username);
+                });
+
+                let rows = Object.values(tableStats).map(t => `
+                    <tr class="hover:bg-slate-700/50 transition border-b border-slate-700/50 text-xs">
+                        <td class="p-3 font-bold text-white">${t.table}</td>
+                        <td class="p-3 text-slate-300 font-semibold">${t.count}</td>
+                        <td class="p-3 text-emerald-300">${Array.from(t.operators).join(', ')}</td>
+                        <td class="p-3 font-black text-emerald-400 text-right">${t.total.toLocaleString()} MT</td>
+                    </tr>
+                `).join('');
+
+                container.innerHTML = `
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-700">
+                                <tr>
+                                    <th class="p-3">Número da Mesa</th>
+                                    <th class="p-3">Nº de Vendas</th>
+                                    <th class="p-3">Operadores Responsáveis</th>
+                                    <th class="p-3 text-right">Total Sold</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            // 5. POR MÉTODO DE PAGAMENTO (Requirement 11)
+            else if (activeReportSubTab === 'by_payment') {
+                let rows = sales.map(s => `
+                    <tr class="hover:bg-slate-700/50 transition border-b border-slate-700/50 text-xs">
+                        <td class="p-3 font-bold text-white">${s.paymentMethod}</td>
+                        <td class="p-3 text-emerald-400 font-bold">${s.saleId}</td>
+                        <td class="p-3 text-slate-300">${s.date} ${s.time}</td>
+                        <td class="p-3 text-white">${s.customerName}</td>
+                        <td class="p-3 text-slate-300">${s.username}</td>
+                        <td class="p-3 text-slate-400 text-[10px]">
+                            ${s.paymentDetails.phone ? `Tel: ${s.paymentDetails.phone} Ref: ${s.paymentDetails.reference}` : 'N/A'}
+                        </td>
+                        <td class="p-3 font-black text-white text-right">${s.total.toLocaleString()} MT</td>
+                    </tr>
+                `).join('');
+
+                container.innerHTML = `
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-700">
+                                <tr>
+                                    <th class="p-3">Método</th>
+                                    <th class="p-3">Venda ID</th>
+                                    <th class="p-3">Data/Hora</th>
+                                    <th class="p-3">Cliente</th>
+                                    <th class="p-3">Operador</th>
+                                    <th class="p-3">Telefone / Referência</th>
+                                    <th class="p-3 text-right">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            // 6. MATRIZ DIA × UTILIZADOR (Requirement 14)
+            else if (activeReportSubTab === 'matrix_user_day') {
+                const matrix = {}; // { date: { edu: 0, moises: 0, admin: 0 } }
+                const usersSet = new Set(['admin', 'edu', 'moises']);
+
+                sales.forEach(s => {
+                    if (!matrix[s.date]) matrix[s.date] = {};
+                    usersSet.add(s.username);
+                    if (!matrix[s.date][s.username]) matrix[s.date][s.username] = 0;
+                    matrix[s.date][s.username] += s.total;
+                });
+
+                const userList = Array.from(usersSet);
+                let headerCols = userList.map(u => `<th class="p-3 text-center">${u}</th>`).join('');
+
+                let rows = Object.keys(matrix).sort().map(d => {
+                    let dayTotal = 0;
+                    let userCols = userList.map(u => {
+                        const amt = matrix[d][u] || 0;
+                        dayTotal += amt;
+                        return `<td class="p-3 text-center font-semibold text-slate-200">${amt > 0 ? `${amt.toLocaleString()} MT` : '-'}</td>`;
+                    }).join('');
+
+                    return `
+                        <tr class="hover:bg-slate-700/50 transition border-b border-slate-700/50 text-xs">
+                            <td class="p-3 font-bold text-emerald-400">${d}</td>
+                            ${userCols}
+                            <td class="p-3 font-black text-white text-right">${dayTotal.toLocaleString()} MT</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                container.innerHTML = `
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-700">
+                                <tr>
+                                    <th class="p-3">Data</th>
+                                    ${headerCols}
+                                    <th class="p-3 text-right">Total do Dia</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            // 7. UTILIZADOR + PRODUTO (Requirement 15)
+            else if (activeReportSubTab === 'user_product') {
+                const userProdMap = {}; // { username: { prodName: { qty, total } } }
+                sales.forEach(s => {
+                    if (!userProdMap[s.username]) userProdMap[s.username] = {};
+                    s.items.forEach(i => {
+                        if (!userProdMap[s.username][i.productName]) {
+                            userProdMap[s.username][i.productName] = { qty: 0, total: 0 };
+                        }
+                        userProdMap[s.username][i.productName].qty += i.quantity;
+                        userProdMap[s.username][i.productName].total += i.subtotal;
+                    });
+                });
+
+                let blocks = Object.keys(userProdMap).map(u => {
+                    const items = userProdMap[u];
+                    let rows = Object.keys(items).map(pName => `
+                        <div class="flex justify-between items-center py-1.5 border-b border-slate-700/40 text-xs">
+                            <span class="text-slate-300 font-medium">${pName}</span>
+                            <span class="text-emerald-400 font-bold">${items[pName].qty} unidades</span>
+                            <span class="text-white font-extrabold">${items[pName].total.toLocaleString()} MT</span>
+                        </div>
+                    `).join('');
+
+                    return `
+                        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700">
+                            <h4 class="font-bold text-emerald-400 text-sm mb-2 flex items-center gap-2">
+                                <i class="fa-solid fa-user-tag"></i> Operador: ${u}
+                            </h4>
+                            <div class="space-y-1">${rows}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">${blocks}</div>`;
+            }
+
+            // 8. UTILIZADOR + DATA + ITEM (Requirement 16)
+            else if (activeReportSubTab === 'granular_log') {
+                let logRows = [];
+                sales.forEach(s => {
+                    s.items.forEach(i => {
+                        logRows.push(`
+                            <tr class="hover:bg-slate-700/50 transition border-b border-slate-700/50 text-xs">
+                                <td class="p-3 text-slate-300">${s.date} ${s.time}</td>
+                                <td class="p-3 font-bold text-white">${s.username}</td>
+                                <td class="p-3 text-slate-300">${s.tableId}</td>
+                                <td class="p-3 font-bold text-emerald-300">${i.productName}</td>
+                                <td class="p-3 font-bold text-white">${i.quantity}</td>
+                                <td class="p-3 text-slate-300">${i.unitPrice.toLocaleString()} MT</td>
+                                <td class="p-3 font-black text-white text-right">${i.subtotal.toLocaleString()} MT</td>
+                            </tr>
+                        `);
+                    });
+                });
+
+                container.innerHTML = `
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-700">
+                                <tr>
+                                    <th class="p-3">Data / Hora</th>
+                                    <th class="p-3">Utilizador</th>
+                                    <th class="p-3">Mesa</th>
+                                    <th class="p-3">Produto</th>
+                                    <th class="p-3">Qtd</th>
+                                    <th class="p-3">Preço Unit.</th>
+                                    <th class="p-3 text-right">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>${logRows.join('')}</tbody>
+                        </table>
+                    </div>
+                `;
+            }
+        }
+
+        function filterByUserDetail(username) {
+            document.getElementById('rpt-user').value = username;
+            switchReportTab('sales_list');
+        }
+
+        function viewSaleDetails(saleId) {
+            const sale = salesHistory.find(s => s.saleId === saleId);
+            if (sale) {
+                openSingleSaleModal(sale);
+            }
+        }
+
+
+        // Export & Print Utilities (Requirements 18 & 21)
+        function printCurrentReport() {
+            const filteredSales = getFilteredSales();
+            const periodText = document.getElementById('rpt-period').options[document.getElementById('rpt-period').selectedIndex].text;
+            const userText = document.getElementById('rpt-user').value;
+
+            const printContainer = document.getElementById('printable-area');
+            printContainer.classList.remove('hidden');
+
+            let totalRev = filteredSales.reduce((acc, s) => acc + s.total, 0);
+
+            printContainer.innerHTML = `
+                <div style="font-family: Arial, sans-serif; color: black; max-width: 800px; margin: 0 auto;">
+                    <div style="text-align: center; border-bottom: 2px solid black; padding-bottom: 10px; margin-bottom: 15px;">
+                        <h2 style="margin: 0; font-size: 20px;">MOZEDUMAR - RESTAURAÇÃO & ENTREGA AO DOMICÍLIO</h2>
+                        <p style="margin: 3px 0; font-size: 13px;">Praia do Bilene | Restaurante Estrela do Mar</p>
+                        <p style="margin: 3px 0; font-size: 13px;">+258 879576355 / +258 878788071</p>
+                    </div>
+
+                    <div style="margin-bottom: 15px; font-size: 12px;">
+                        <h3 style="margin: 0; font-size: 16px;">RELATÓRIO DE VENDAS DA APLICAÇÃO</h3>
+                        <p style="margin: 2px 0;"><strong>Período:</strong> ${periodText}</p>
+                        <p style="margin: 2px 0;"><strong>Filtro Utilizador:</strong> ${userText}</p>
+                        <p style="margin: 2px 0;"><strong>Gerado em:</strong> ${new Date().toLocaleString()} por <strong>${currentUser.name}</strong></p>
+                    </div>
+
+                    <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 15px;">
+                        <thead>
+                            <tr style="background: #eee; border-bottom: 1px solid #000;">
+                                <th style="padding: 6px; text-align: left;">ID Venda</th>
+                                <th style="padding: 6px; text-align: left;">Data/Hora</th>
+                                <th style="padding: 6px; text-align: left;">Mesa</th>
+                                <th style="padding: 6px; text-align: left;">Operador</th>
+                                <th style="padding: 6px; text-align: left;">Pagamento</th>
+                                <th style="padding: 6px; text-align: right;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${filteredSales.map(s => `
+                                <tr style="border-bottom: 1px solid #ddd;">
+                                    <td style="padding: 6px;">${s.saleId}</td>
+                                    <td style="padding: 6px;">${s.date} ${s.time}</td>
+                                    <td style="padding: 6px;">${s.tableId}</td>
+                                    <td style="padding: 6px;">${s.username}</td>
+                                    <td style="padding: 6px;">${s.paymentMethod}</td>
+                                    <td style="padding: 6px; text-align: right;">${s.total.toLocaleString()} MT</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+
+                    <div style="text-align: right; font-size: 14px; border-top: 2px solid black; padding-top: 5px;">
+                        <strong>TOTAL DO RELATÓRIO: ${totalRev.toLocaleString()} MT</strong>
+                    </div>
+                </div>
+            `;
+
+            window.print();
+            printContainer.classList.add('hidden');
+        }
+
+        function printSingleSaleReceipt() {
+            const content = document.getElementById('sale-detail-content').innerHTML;
+            const printContainer = document.getElementById('printable-area');
+            printContainer.classList.remove('hidden');
+
+            printContainer.innerHTML = `
+                <div style="max-width: 350px; margin: 0 auto; font-family: monospace; font-size: 12px; padding: 10px; border: 1px solid #ccc;">
+                    ${content}
+                </div>
+            `;
+
+            window.print();
+            printContainer.classList.add('hidden');
+        }
+
+        function exportReportJSON() {
+            const filteredSales = getFilteredSales();
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(filteredSales, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `MOZEDUMAR_Relatorio_${Date.now()}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function exportReportCSV() {
+            const filteredSales = getFilteredSales();
+            let csvContent = "data:text/csv;charset=utf-8,ID Venda,Data,Hora,Utilizador,Mesa,Cliente,Metodo,Total\n";
+
+            filteredSales.forEach(s => {
+                csvContent += `"${s.saleId}","${s.date}","${s.time}","${s.username}","${s.tableId}","${s.customerName}","${s.paymentMethod}",${s.total}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `MOZEDUMAR_Relatorio_${Date.now()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        }
+
+        // Catalog Table Management
+        function renderCatalogTable() {
+            const tbody = document.getElementById('catalog-table-body');
+            tbody.innerHTML = '';
+
+            const query = document.getElementById('catalog-search').value.toLowerCase();
+            const filtered = menuCatalog.filter(p => p.name.toLowerCase().includes(query) || p.category.toLowerCase().includes(query));
+
+            filtered.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-700/50 transition border-b border-slate-700/50";
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-slate-400">${p.id}</td>
+                    <td class="p-3 font-bold text-white">${p.name}</td>
+                    <td class="p-3 text-emerald-400">${p.category}</td>
+                    <td class="p-3 font-black text-white">${p.price.toLocaleString()} MT</td>
+                    <td class="p-3 text-right">
+                        <button onclick="deleteProduct('${p.id}')" class="text-rose-400 hover:text-rose-300 font-bold">Excluir</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function addNewProductModal() {
+            const name = prompt("Nome do Novo Produto:");
+            if (!name) return;
+            const category = prompt("Categoria (ex: Burgers & Meats, Pizzas, Refrigerantes):", "Burgers & Meats");
+            const price = parseFloat(prompt("Preço em MT:", "500"));
+
+            if (name && price) {
+                const newId = `P${String(menuCatalog.length + 1).padStart(2, '0')}`;
+                menuCatalog.push({ id: newId, name, category: category || "Outros", price });
+                renderCatalogTable();
+            }
+        }
+
+        function deleteProduct(id) {
+            menuCatalog = menuCatalog.filter(p => p.id !== id);
+            renderCatalogTable();
+        }
+    </script>
+</body>
+</html>
